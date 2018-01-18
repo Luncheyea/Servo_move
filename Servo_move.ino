@@ -1,4 +1,6 @@
 #include <HCPCA9685.h> // Include the HCPCA9685 library created by Andrew Davies
+#include <pt.h>
+#include <PT_timer.h>
 
 #define I2CAdd 0x40 // Default address of the PCA9685 Module
 HCPCA9685 HCPCA9685(I2CAdd); // Define Library to use I2C communication
@@ -8,7 +10,6 @@ void setup() {
 
   HCPCA9685.Init(SERVO_MODE); // Set to Servo Mode
   HCPCA9685.Sleep(false); // Wake up PCA9685 module
-
 
   stand();
 }
@@ -21,6 +22,7 @@ void loop() {
   //test();
 }
 
+/*
 void test() {
   HCPCA9685.Servo(4, 150);
   HCPCA9685.Servo(5, 350);
@@ -59,23 +61,6 @@ void forward() {
   delay(300);
 }
 
-void stand() {
-  HCPCA9685.Servo(0, 225);
-  HCPCA9685.Servo(1, 90);
-
-  HCPCA9685.Servo(2, 225);
-  HCPCA9685.Servo(3, 90);
-
-  HCPCA9685.Servo(4, 135);
-  HCPCA9685.Servo(5, 270);
-
-  HCPCA9685.Servo(6, 135);
-  HCPCA9685.Servo(7, 270);
-
-  delay(100);
-}
-
-
 void steps() {
   HCPCA9685.Servo(2, 225);
   HCPCA9685.Servo(3, 90);
@@ -100,9 +85,23 @@ void steps() {
   HCPCA9685.Servo(2, 285);
   HCPCA9685.Servo(3, 10);
   delay(100);
+}*/
+
+void stand() {
+  HCPCA9685.Servo(0, 225);
+  HCPCA9685.Servo(1, 90);
+
+  HCPCA9685.Servo(2, 225);
+  HCPCA9685.Servo(3, 90);
+
+  HCPCA9685.Servo(4, 135);
+  HCPCA9685.Servo(5, 270);
+
+  HCPCA9685.Servo(6, 135);
+  HCPCA9685.Servo(7, 270);
+
+  delay(100);
 }
-
-
 
 
 
