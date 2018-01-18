@@ -2,20 +2,68 @@
 #include <pt.h>
 #include <PT_timer.h>
 
-#define I2CAdd 0x40 // Default address of the PCA9685 Module
-HCPCA9685 HCPCA9685(I2CAdd); // Define Library to use I2C communication
+// 0x40 is default address of the PCA9685 Module
+// Define Library to use I2C communication
+HCPCA9685 HCPCA9685(0x40);
+
+Pt footPt[4];
+PT_timer delayTimer[4];
+bool PtEnable[4] = { true };
 
 void setup() {
-  Serial.begin(9600);
-
   HCPCA9685.Init(SERVO_MODE); // Set to Servo Mode
   HCPCA9685.Sleep(false); // Wake up PCA9685 module
+
+  for (uint8_t i = 0; i < 4; i++)
+    PT_INIT(&footPt[i]);
 
   stand();
 }
 
+/////////////////////////////////////////////////
+static void foot0_move(Pt *pt) {
+  PT_BEGIN(pt);
+  while (1) {
+    PT_WAIT_UNTIL(pt, PtEnable[0]);
 
+  }
+  PT_END(pt);
+}
+
+static void foot1_move(Pt *pt) {
+  PT_BEGIN(pt);
+  while (1) {
+    PT_WAIT_UNTIL(pt, PtEnable[1]);
+
+  }
+  PT_END(pt);
+}
+
+static void foot2_move(Pt *pt) {
+  PT_BEGIN(pt);
+  while (1) {
+    PT_WAIT_UNTIL(pt, PtEnable[2]);
+
+  }
+  PT_END(pt);
+}
+
+static void foot3_move(Pt *pt) {
+  PT_BEGIN(pt);
+  while (1) {
+    PT_WAIT_UNTIL(pt, PtEnable[3]);
+
+  }
+  PT_END(pt);
+}
+
+//////////////////////////////////////////
 void loop() {
+  foot0_move(&footPt[0]);
+  foot1_move(&footPt[1]);
+  foot2_move(&footPt[2]);
+  foot3_move(&footPt[3]);
+
   //steps();
   //forward();
   //stand();
@@ -23,7 +71,7 @@ void loop() {
 }
 
 /*
-void test() {
+  void test() {
   HCPCA9685.Servo(4, 150);
   HCPCA9685.Servo(5, 350);
   delay(200);
@@ -33,9 +81,9 @@ void test() {
   HCPCA9685.Servo(4, 135);
   HCPCA9685.Servo(5, 270);
   delay(200);
-}
+  }
 
-void forward() {
+  void forward() {
   HCPCA9685.Servo(0, 120);
   HCPCA9685.Servo(6, 240);
   HCPCA9685.Servo(2, 240);
@@ -59,9 +107,9 @@ void forward() {
   HCPCA9685.Servo(3, 200);
   HCPCA9685.Servo(5, 160);
   delay(300);
-}
+  }
 
-void steps() {
+  void steps() {
   HCPCA9685.Servo(2, 225);
   HCPCA9685.Servo(3, 90);
   HCPCA9685.Servo(0, 285);
@@ -85,7 +133,7 @@ void steps() {
   HCPCA9685.Servo(2, 285);
   HCPCA9685.Servo(3, 10);
   delay(100);
-}*/
+  }*/
 
 void stand() {
   HCPCA9685.Servo(0, 225);
