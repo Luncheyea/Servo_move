@@ -16,7 +16,9 @@ void setup() {
 
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
-  PtEnable[1] = false;
+
+  for (uint8_t i = 0; i < 4; i++)
+    PtEnable[i] = true;
 
   stand();
 }
@@ -26,6 +28,35 @@ static void foot0_move(Pt *pt) {
   PT_BEGIN(pt);
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[0]);
+    static int16_t i;
+
+    for (i = 240; i >= 120; i -= 5) {
+      HCPCA9685.Servo(0, i);
+
+      delayTimer[0].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
+    }
+
+    for (i = 60; i <= 200; i += 5) {
+      HCPCA9685.Servo(1, i);
+
+      delayTimer[0].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
+    }
+
+    for (i = 120; i <= 240; i += 5) {
+      HCPCA9685.Servo(0, i);
+
+      delayTimer[0].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
+    }
+
+    for (i = 200; i >= 60; i -= 5) {
+      HCPCA9685.Servo(1, i);
+
+      delayTimer[0].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
+    }
 
   }
   PT_END(pt);
@@ -35,23 +66,36 @@ static void foot1_move(Pt *pt) {
   PT_BEGIN(pt);
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[1]);
+    static int16_t i;
 
+    for (i = 120; i <= 240; i += 5) {
+      HCPCA9685.Servo(2, i);
 
-    HCPCA9685.Servo(2, 240);
-    delayTimer[3].setTimer(800);
-    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+      delayTimer[1].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
+    }
 
-    HCPCA9685.Servo(3, 60);
-    delayTimer[3].setTimer(300);
-    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+    for (i = 200; i >= 60; i -= 5) {
+      HCPCA9685.Servo(3, i);
 
-    HCPCA9685.Servo(2, 120);
-    delayTimer[3].setTimer(800);
-    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+      delayTimer[1].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
+    }
 
-    HCPCA9685.Servo(3, 200);
-    delayTimer[3].setTimer(300);
-    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+    for (i = 240; i >= 120; i -= 5) {
+      HCPCA9685.Servo(2, i);
+
+      delayTimer[1].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
+    }
+
+    for (i = 60; i <= 200; i += 5) {
+      HCPCA9685.Servo(3, i);
+
+      delayTimer[1].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
+    }
+
   }
   PT_END(pt);
 }
@@ -60,6 +104,35 @@ static void foot2_move(Pt *pt) {
   PT_BEGIN(pt);
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[2]);
+    static int16_t i;
+
+    for (i = 240; i >= 120; i -= 5) {
+      HCPCA9685.Servo(4, i);
+
+      delayTimer[2].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
+    }
+
+    for (i = 160; i <= 300; i += 5) {
+      HCPCA9685.Servo(5, i);
+
+      delayTimer[2].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
+    }
+
+    for (i = 120; i <= 240; i += 5) {
+      HCPCA9685.Servo(4, i);
+
+      delayTimer[2].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
+    }
+
+    for (i = 300; i >= 160; i -= 5) {
+      HCPCA9685.Servo(5, i);
+
+      delayTimer[2].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
+    }
 
   }
   PT_END(pt);
@@ -69,6 +142,35 @@ static void foot3_move(Pt *pt) {
   PT_BEGIN(pt);
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[3]);
+    static int16_t i;
+
+    for (i = 120; i <= 240; i += 5) {
+      HCPCA9685.Servo(6, i);
+
+      delayTimer[3].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+    }
+
+    for (i = 300; i >= 160; i -= 5) {
+      HCPCA9685.Servo(7, i);
+
+      delayTimer[3].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+    }
+
+    for (i = 240; i >= 120; i -= 5) {
+      HCPCA9685.Servo(6, i);
+
+      delayTimer[3].setTimer(20);
+      PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+    }
+
+    for (i = 160; i <= 300; i += 5) {
+      HCPCA9685.Servo(7, i);
+
+      delayTimer[3].setTimer(15);
+      PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+    }
 
   }
   PT_END(pt);
