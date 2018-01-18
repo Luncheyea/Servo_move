@@ -8,7 +8,7 @@ HCPCA9685 HCPCA9685(0x40);
 
 Pt footPt[4];
 PT_timer delayTimer[4];
-bool PtEnable[4] = { true };
+bool PtEnable[4];
 
 void setup() {
   HCPCA9685.Init(SERVO_MODE); // Set to Servo Mode
@@ -16,6 +16,7 @@ void setup() {
 
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
+  PtEnable[1] = false;
 
   stand();
 }
@@ -35,6 +36,22 @@ static void foot1_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[1]);
 
+
+    HCPCA9685.Servo(2, 240);
+    delayTimer[3].setTimer(800);
+    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+
+    HCPCA9685.Servo(3, 60);
+    delayTimer[3].setTimer(300);
+    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+
+    HCPCA9685.Servo(2, 120);
+    delayTimer[3].setTimer(800);
+    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
+
+    HCPCA9685.Servo(3, 200);
+    delayTimer[3].setTimer(300);
+    PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
   }
   PT_END(pt);
 }
@@ -83,7 +100,7 @@ void loop() {
   delay(200);
   }
 
-  void forward() {
+  void forward() { --------------------------------
   HCPCA9685.Servo(0, 120);
   HCPCA9685.Servo(6, 240);
   HCPCA9685.Servo(2, 240);
