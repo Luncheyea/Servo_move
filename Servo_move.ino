@@ -37,20 +37,21 @@ static void forward_mission(Pt *pt) {
 
 
   PtEnable[0] = true;
-  delayTimer[4].setTimer(300);
-  PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+  //delayTimer[4].setTimer(200);
+  //PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
 
   PtEnable[3] = true;
-  delayTimer[4].setTimer(300);
-  PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
-
-  PtEnable[2] = true;
-  delayTimer[4].setTimer(300);
+  delayTimer[4].setTimer(500);
   PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
 
   PtEnable[1] = true;
-  delayTimer[4].setTimer(300);
+  //delayTimer[4].setTimer(200);
+  //PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+  
+  PtEnable[2] = true;
+  delayTimer[4].setTimer(400);
   PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+
 
   isforward = false;
 
@@ -129,28 +130,28 @@ static void foot0_move(Pt *pt) {
     for (i = 120; i <= 240; i += 5) {
       HCPCA9685.Servo(0, i);
 
-      delayTimer[0].setTimer(20);
+      delayTimer[0].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
     }
 
     for (i = 200; i >= 60; i -= 5) {
       HCPCA9685.Servo(1, i);
 
-      delayTimer[0].setTimer(15);
+      delayTimer[0].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
     }
 
     for (i = 240; i >= 120; i -= 5) {
       HCPCA9685.Servo(0, i);
 
-      delayTimer[0].setTimer(20);
+      delayTimer[0].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
     }
 
     for (i = 60; i <= 200; i += 5) {
       HCPCA9685.Servo(1, i);
 
-      delayTimer[0].setTimer(15);
+      delayTimer[0].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
     }
 
@@ -167,28 +168,28 @@ static void foot1_move(Pt *pt) {
     for (i = 120; i <= 240; i += 5) {
       HCPCA9685.Servo(2, i);
 
-      delayTimer[1].setTimer(20);
+      delayTimer[1].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
     }
 
     for (i = 200; i >= 60; i -= 5) {
       HCPCA9685.Servo(3, i);
 
-      delayTimer[1].setTimer(15);
+      delayTimer[1].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
     }
 
     for (i = 240; i >= 120; i -= 5) {
       HCPCA9685.Servo(2, i);
 
-      delayTimer[1].setTimer(20);
+      delayTimer[1].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
     }
 
     for (i = 60; i <= 200; i += 5) {
       HCPCA9685.Servo(3, i);
 
-      delayTimer[1].setTimer(15);
+      delayTimer[1].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
     }
 
@@ -205,28 +206,28 @@ static void foot2_move(Pt *pt) {
     for (i = 240; i >= 120; i -= 5) {
       HCPCA9685.Servo(4, i);
 
-      delayTimer[2].setTimer(20);
+      delayTimer[2].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
     }
 
     for (i = 160; i <= 300; i += 5) {
       HCPCA9685.Servo(5, i);
 
-      delayTimer[2].setTimer(15);
+      delayTimer[2].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
     }
 
     for (i = 120; i <= 240; i += 5) {
       HCPCA9685.Servo(4, i);
 
-      delayTimer[2].setTimer(20);
+      delayTimer[2].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
     }
 
     for (i = 300; i >= 160; i -= 5) {
       HCPCA9685.Servo(5, i);
 
-      delayTimer[2].setTimer(15);
+      delayTimer[2].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[2].Expired());
     }
 
@@ -243,28 +244,28 @@ static void foot3_move(Pt *pt) {
     for (i = 240; i >= 120; i -= 5) {
       HCPCA9685.Servo(6, i);
 
-      delayTimer[3].setTimer(20);
+      delayTimer[3].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
     }
 
     for (i = 160; i <= 300; i += 5) {
       HCPCA9685.Servo(7, i);
 
-      delayTimer[3].setTimer(15);
+      delayTimer[3].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
     }
 
     for (i = 120; i <= 240; i += 5) {
       HCPCA9685.Servo(6, i);
 
-      delayTimer[3].setTimer(20);
+      delayTimer[3].setTimer(15);
       PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
     }
 
     for (i = 300; i >= 160; i -= 5) {
       HCPCA9685.Servo(7, i);
 
-      delayTimer[3].setTimer(15);
+      delayTimer[3].setTimer(10);
       PT_WAIT_UNTIL(pt, delayTimer[3].Expired());
     }
 
