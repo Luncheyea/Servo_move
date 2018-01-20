@@ -6,22 +6,118 @@
 // Define Library to use I2C communication
 HCPCA9685 HCPCA9685(0x40);
 
-Pt footPt[4];
-PT_timer delayTimer[4];
-bool PtEnable[4];
+Pt footPt[4], forwardPt;
+PT_timer delayTimer[5];
+static bool PtEnable[4], isforward = true;
 
 void setup() {
+  Serial.begin(115200);
+
   HCPCA9685.Init(SERVO_MODE); // Set to Servo Mode
   HCPCA9685.Sleep(false); // Wake up PCA9685 module
 
+  PT_INIT(&forwardPt);
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
 
   for (uint8_t i = 0; i < 4; i++)
     ;//PtEnable[i] = true;
 
+  isforward = true;
   stand();
 }
+
+static void forward_mission(Pt *pt) {
+  PT_BEGIN(pt);
+
+  if (!isforward) {
+
+    PT_WAIT_UNTIL(pt, isforward);
+  }
+
+
+  PtEnable[0] = true;
+  delayTimer[4].setTimer(300);
+  PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+
+  PtEnable[3] = true;
+  delayTimer[4].setTimer(300);
+  PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+
+  PtEnable[2] = true;
+  delayTimer[4].setTimer(300);
+  PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+
+  PtEnable[1] = true;
+  delayTimer[4].setTimer(300);
+  PT_WAIT_UNTIL(pt, delayTimer[4].Expired());
+
+  isforward = false;
+
+  PT_END(pt);
+}
+
+void loop() {
+  forward_mission(&forwardPt);
+
+  foot0_move(&footPt[0]);
+  foot1_move(&footPt[1]);
+  foot2_move(&footPt[2]);
+  foot3_move(&footPt[3]);
+
+
+
+  //steps();
+  //forward();
+  //stand();
+  //test();
+}
+
+
+
+/*
+  void steps() {
+  HCPCA9685.Servo(2, 225);
+  HCPCA9685.Servo(3, 90);
+  HCPCA9685.Servo(0, 285);
+  HCPCA9685.Servo(1, 10);
+  delay(100);
+
+  HCPCA9685.Servo(0, 225);
+  HCPCA9685.Servo(1, 90);
+  HCPCA9685.Servo(6, 75);
+  HCPCA9685.Servo(7, 350);
+  delay(100);
+
+  HCPCA9685.Servo(6, 135);
+  HCPCA9685.Servo(7, 270);
+  HCPCA9685.Servo(4, 75);
+  HCPCA9685.Servo(5, 350);
+  delay(100);
+
+  HCPCA9685.Servo(4, 135);
+  HCPCA9685.Servo(5, 270);
+  HCPCA9685.Servo(2, 285);
+  HCPCA9685.Servo(3, 10);
+  delay(100);
+  }*/
+
+void stand() {
+  HCPCA9685.Servo(0, 225);
+  HCPCA9685.Servo(1, 90);
+
+  HCPCA9685.Servo(2, 225);
+  HCPCA9685.Servo(3, 90);
+
+  HCPCA9685.Servo(4, 135);
+  HCPCA9685.Servo(5, 270);
+
+  HCPCA9685.Servo(6, 135);
+  HCPCA9685.Servo(7, 270);
+
+  delay(100);
+}
+
 
 /////////////////////////////////////////////////
 static void foot0_move(Pt *pt) {
@@ -176,61 +272,7 @@ static void foot3_move(Pt *pt) {
   PT_END(pt);
 }
 
-//////////////////////////////////////////
-void loop() {
-  foot0_move(&footPt[0]);
-  foot1_move(&footPt[1]);
-  foot2_move(&footPt[2]);
-  foot3_move(&footPt[3]);
 
-  //steps();
-  //forward();
-  //stand();
-  //test();
-}
-
-/*
-  void steps() {
-  HCPCA9685.Servo(2, 225);
-  HCPCA9685.Servo(3, 90);
-  HCPCA9685.Servo(0, 285);
-  HCPCA9685.Servo(1, 10);
-  delay(100);
-
-  HCPCA9685.Servo(0, 225);
-  HCPCA9685.Servo(1, 90);
-  HCPCA9685.Servo(6, 75);
-  HCPCA9685.Servo(7, 350);
-  delay(100);
-
-  HCPCA9685.Servo(6, 135);
-  HCPCA9685.Servo(7, 270);
-  HCPCA9685.Servo(4, 75);
-  HCPCA9685.Servo(5, 350);
-  delay(100);
-
-  HCPCA9685.Servo(4, 135);
-  HCPCA9685.Servo(5, 270);
-  HCPCA9685.Servo(2, 285);
-  HCPCA9685.Servo(3, 10);
-  delay(100);
-  }*/
-
-void stand() {
-  HCPCA9685.Servo(0, 225);
-  HCPCA9685.Servo(1, 90);
-
-  HCPCA9685.Servo(2, 225);
-  HCPCA9685.Servo(3, 90);
-
-  HCPCA9685.Servo(4, 135);
-  HCPCA9685.Servo(5, 270);
-
-  HCPCA9685.Servo(6, 135);
-  HCPCA9685.Servo(7, 270);
-
-  delay(100);
-}
 
 
 
