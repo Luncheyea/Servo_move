@@ -127,7 +127,7 @@ static void foot0_move(Pt *pt) {
     PT_WAIT_UNTIL(pt, PtEnable[0]);
     static int16_t i;
 
-    for (i = 120; i <= 240; i += 5) {
+    for (i = 110; i <= 230; i += 5) {
       HCPCA9685.Servo(0, i);
 
       delayTimer[0].setTimer(aaa);
@@ -141,7 +141,7 @@ static void foot0_move(Pt *pt) {
       PT_WAIT_UNTIL(pt, delayTimer[0].Expired());
     }
 
-    for (i = 240; i >= 120; i -= 5) {
+    for (i = 230; i >= 110; i -= 5) {
       HCPCA9685.Servo(0, i);
 
       delayTimer[0].setTimer(aaa);
@@ -165,7 +165,7 @@ static void foot1_move(Pt *pt) {
     PT_WAIT_UNTIL(pt, PtEnable[1]);
     static int16_t i;
 
-    for (i = 120; i <= 240; i += 5) {
+    for (i = 110; i <= 230; i += 5) {
       HCPCA9685.Servo(2, i);
 
       delayTimer[1].setTimer(aaa);
@@ -179,7 +179,7 @@ static void foot1_move(Pt *pt) {
       PT_WAIT_UNTIL(pt, delayTimer[1].Expired());
     }
 
-    for (i = 240; i >= 120; i -= 5) {
+    for (i = 230; i >= 110; i -= 5) {
       HCPCA9685.Servo(2, i);
 
       delayTimer[1].setTimer(aaa);
