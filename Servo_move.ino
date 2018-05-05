@@ -39,18 +39,21 @@ void setup() {
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
 
-  for (uint8_t i = 0; i < 4; i++)
-    ;//PtEnable[i] = true;
-
   action = stehen;//geradeaus;//sitzen;
-  //stand();
+  stand();
   delay(2000);
 }
 
 static void Action_mission(Pt *pt) {
   PT_BEGIN(pt);
 
-  if (action == stehen) {
+  static DogAction _action = stehen;
+  if (_action == action)
+    return;
+  PT_YIELD(pt);
+  _action = action;
+
+  if (_action == stehen) {
     PtEnable[0] = false;
     PtEnable[1] = false;
     PtEnable[2] = false;
@@ -59,14 +62,14 @@ static void Action_mission(Pt *pt) {
     PT_YIELD(pt);
     stand();
   }
-  else if (action == sitzen) {
+  else if (_action == sitzen) {
     PtEnable[0] = false;
     PtEnable[1] = false;
     PtEnable[2] = false;
     PtEnable[3] = false;
 
     PT_YIELD(pt);
-    sitdown();
+    //sitdown();
   } else {
     PtEnable[0] = true;
     PtEnable[3] = true;
@@ -96,18 +99,17 @@ static void test(Pt *pt) {
   PT_BEGIN(pt);
 
   action = stehen;
-  PT_TIMER_DELAY(pt, 5000);
+  PT_TIMER_DELAY(pt, 7000);
   action = geradeaus;
-  PT_TIMER_DELAY(pt, 5000);
+  PT_TIMER_DELAY(pt, 7000);
   action = sitzen;
-  PT_TIMER_DELAY(pt, 5000);
+  PT_TIMER_DELAY(pt, 7000);
   action = stehen;
-  PT_TIMER_DELAY(pt, 5000);
+  PT_TIMER_DELAY(pt, 7000);
 
   PT_YIELD(pt);
   PT_END(pt);
 }
-
 
 static void receiveMessage(Pt *pt) {
   PT_BEGIN(pt);
@@ -177,6 +179,7 @@ static void foot0_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[0]);
     static int16_t i;
+    static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
 
     for (i = 150; i <= 210 && PtEnable[0]; i += 5) {
       HCPCA9685.Servo(0, i);
@@ -212,6 +215,7 @@ static void foot1_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[1]);
     static int16_t i;
+	static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
 
     for (i = 210; i <= 270 && PtEnable[1]; i += 5) {
       HCPCA9685.Servo(2, i);
@@ -247,6 +251,7 @@ static void foot2_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[2]);
     static int16_t i;
+	static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
 
     for (i = 210; i >= 150 && PtEnable[2]; i -= 5) {
       HCPCA9685.Servo(4, i);
@@ -282,6 +287,7 @@ static void foot3_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[3]);
     static int16_t i;
+	static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
 
     for (i = 150; i >= 90 && PtEnable[3]; i -= 5) {
       HCPCA9685.Servo(6, i);
