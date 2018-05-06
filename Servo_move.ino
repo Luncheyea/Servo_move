@@ -7,7 +7,7 @@
 // Define Library to use I2C communication
 HCPCA9685 HCPCA9685(0x40);
 
-Pt footPt[4], actiondPt, receivePt, testPt;
+Pt footPt[4], actiondPt, receivePt, sitzenPt, testPt;
 static bool PtEnable[4];
 
 enum DogAction {
@@ -36,6 +36,7 @@ void setup() {
   //
   PT_INIT(&actiondPt);
   PT_INIT(&receivePt);
+  PT_INIT(&sitzenPt);
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
 
@@ -48,9 +49,7 @@ static void Action_mission(Pt *pt) {
   PT_BEGIN(pt);
 
   static DogAction _action = stehen;
-  if (_action == action)
-    return;
-  PT_YIELD(pt);
+  PT_WAIT_UNTIL(pt, _action != action);
   _action = action;
 
   if (_action == stehen) {
@@ -86,6 +85,7 @@ static void Action_mission(Pt *pt) {
 void loop() {
   Action_mission(&actiondPt);
   receiveMessage(&receivePt);
+  sitdownAction(&sitzenPt);
   //
   test(&testPt);
   //
@@ -99,13 +99,13 @@ static void test(Pt *pt) {
   PT_BEGIN(pt);
 
   action = stehen;
-  PT_TIMER_DELAY(pt, 7000);
+  PT_TIMER_DELAY(pt, 1000);
   action = geradeaus;
-  PT_TIMER_DELAY(pt, 7000);
+  PT_TIMER_DELAY(pt, 2000);
   action = sitzen;
-  PT_TIMER_DELAY(pt, 7000);
+  PT_TIMER_DELAY(pt, 3000);
   action = stehen;
-  PT_TIMER_DELAY(pt, 7000);
+  PT_TIMER_DELAY(pt, 5000);
 
   PT_YIELD(pt);
   PT_END(pt);
@@ -155,18 +155,77 @@ void stand() {
   HCPCA9685.Servo(7, 270);
 }
 
-void sitdown() {
-  HCPCA9685.Servo(0, 260);
-  HCPCA9685.Servo(1, 160);
+static void sitdownAction(Pt *pt) {
+  PT_BEGIN(pt);
 
-  HCPCA9685.Servo(2, 30);
-  HCPCA9685.Servo(3, 360);
+  PT_WAIT_UNTIL(pt, action == sitzen);
+  stand();
+  PT_YIELD(pt);
 
-  HCPCA9685.Servo(4, 80);
-  HCPCA9685.Servo(5, 165);
+  static int16_t i, j;
+  static const uint16_t sitPos[8] = {260, 180, 30, 360, 80, 165, 340, 20};
+  static uint16_t sitArg[8];
+  sitArg[0] = 200; sitArg[1] = 90;  sitArg[2] = 225; sitArg[3] = 100;
+  sitArg[4] = 135; sitArg[5] = 270; sitArg[6] = 140; sitArg[7] = 270;
 
-  HCPCA9685.Servo(6, 340);
-  HCPCA9685.Servo(7, 20);
+  for (i = 0; i < 52; i++) {
+    HCPCA9685.Servo(0, sitArg[0]);
+    sitArg[0] += 2;
+    if (sitArg[0] > sitPos[0]) sitArg[0] = sitPos[0];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(1, sitArg[1]);
+    sitArg[1] += 5;
+    if (sitArg[1] > sitPos[1]) sitArg[1] = sitPos[1];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(2, sitArg[2]);
+    sitArg[2] -= 10;
+    if (sitArg[2] < sitPos[2]) sitArg[2] = sitPos[2];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(3, sitArg[3]);
+    sitArg[3] += 13;
+    if (sitArg[3] > sitPos[3]) sitArg[3] = sitPos[3];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(4, sitArg[4]);
+    sitArg[4] -= 2;
+    if (sitArg[4] < sitPos[4]) sitArg[4] = sitPos[4];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(5, sitArg[5]);
+    sitArg[5] -= 5;
+    if (sitArg[5] < sitPos[5]) sitArg[5] = sitPos[5];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(6, sitArg[6]);
+    sitArg[6] += 10;
+    if (sitArg[6] > sitPos[6]) sitArg[6] = sitPos[6];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(7, sitArg[7]);
+    sitArg[7] -= 13;
+    if (sitArg[7] < sitPos[7]) sitArg[7] = sitPos[7];
+    PT_YIELD(pt);
+
+    PT_TIMER_DELAY(pt, 15);
+  }
+  //
+  PT_WAIT_UNTIL(pt, action != sitzen);
+
+  // 260, 90
+  for (i = 260, j = 90; i >= 90, j <= 260; i -= 5, j += 5) {
+    HCPCA9685.Servo(0, i);
+    HCPCA9685.Servo(4, j);
+    delay(10);
+  }
+  delay(500);
+
+  stand();
+  PT_YIELD(pt);
+
+  PT_END(pt);
 }
 
 
