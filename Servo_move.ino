@@ -170,39 +170,37 @@ void sitdown() {
 }
 
 
-
 /////////////////////////////////////////////////
-uint8_t aaa = 15, bbb = 10;
-
 static void foot0_move(Pt *pt) {
   PT_BEGIN(pt);
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[0]);
     static int16_t i;
-    static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
+    static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
+    static const uint16_t actionPosition[4] = {150, 210, 200, 60};
 
-    for (i = 150; i <= 210 && PtEnable[0]; i += 5) {
+    for (i = actionPosition[0]; i <= actionPosition[1] && PtEnable[0]; i += step) {
       HCPCA9685.Servo(0, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 200; i >= 60 && PtEnable[0]; i -= 5) {
+    for (i = actionPosition[2]; i >= actionPosition[3] && PtEnable[0]; i -= step) {
       HCPCA9685.Servo(1, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
-    for (i = 210; i >= 150 && PtEnable[0]; i -= 5) {
+    for (i = actionPosition[1]; i >= actionPosition[0] && PtEnable[0]; i -= step) {
       HCPCA9685.Servo(0, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 60; i <= 200 && PtEnable[0]; i += 5) {
+    for (i = actionPosition[3]; i <= actionPosition[2] && PtEnable[0]; i += step) {
       HCPCA9685.Servo(1, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
     PT_YIELD(pt);
@@ -215,30 +213,31 @@ static void foot1_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[1]);
     static int16_t i;
-	static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
+    static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
+    static const uint16_t actionPosition[4] = {210, 270, 200, 60};
 
-    for (i = 210; i <= 270 && PtEnable[1]; i += 5) {
+    for (i = actionPosition[0]; i <= actionPosition[1] && PtEnable[1]; i += step) {
       HCPCA9685.Servo(2, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 200; i >= 60 && PtEnable[1]; i -= 5) {
+    for (i = actionPosition[2]; i >= actionPosition[3] && PtEnable[1]; i -= step) {
       HCPCA9685.Servo(3, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
-    for (i = 270; i >= 210 && PtEnable[1]; i -= 5) {
+    for (i = actionPosition[1]; i >= actionPosition[0] && PtEnable[1]; i -= step) {
       HCPCA9685.Servo(2, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 60; i <= 200 && PtEnable[1]; i += 5) {
+    for (i = actionPosition[3]; i <= actionPosition[2] && PtEnable[1]; i += step) {
       HCPCA9685.Servo(3, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
     PT_YIELD(pt);
@@ -251,30 +250,31 @@ static void foot2_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[2]);
     static int16_t i;
-	static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
+    static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
+    static const uint16_t actionPosition[4] = {210, 150, 160, 300};
 
-    for (i = 210; i >= 150 && PtEnable[2]; i -= 5) {
+    for (i = actionPosition[0]; i >= actionPosition[1] && PtEnable[2]; i -= step) {
       HCPCA9685.Servo(4, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 160; i <= 300 && PtEnable[2]; i += 5) {
+    for (i = actionPosition[2]; i <= actionPosition[3] && PtEnable[2]; i += step) {
       HCPCA9685.Servo(5, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
-    for (i = 150; i <= 210 && PtEnable[2]; i += 5) {
+    for (i = actionPosition[1]; i <= actionPosition[0] && PtEnable[2]; i += step) {
       HCPCA9685.Servo(4, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 300; i >= 160 && PtEnable[2]; i -= 5) {
+    for (i = actionPosition[3]; i >= actionPosition[2] && PtEnable[2]; i -= step) {
       HCPCA9685.Servo(5, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
     PT_YIELD(pt);
@@ -287,30 +287,31 @@ static void foot3_move(Pt *pt) {
   while (1) {
     PT_WAIT_UNTIL(pt, PtEnable[3]);
     static int16_t i;
-	static uint8_t posSwingSpeed = 15, negSwingSpeed = 10;
+    static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
+    static const uint16_t actionPosition[4] = {150, 90, 160, 300};
 
-    for (i = 150; i >= 90 && PtEnable[3]; i -= 5) {
+    for (i = actionPosition[0]; i >= actionPosition[1] && PtEnable[3]; i -= step) {
       HCPCA9685.Servo(6, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 160; i <= 300 && PtEnable[3]; i += 5) {
+    for (i = actionPosition[2]; i <= actionPosition[3] && PtEnable[3]; i += step) {
       HCPCA9685.Servo(7, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
-    for (i = 90; i <= 150 && PtEnable[3]; i += 5) {
+    for (i = actionPosition[1]; i <= actionPosition[0] && PtEnable[3]; i += step) {
       HCPCA9685.Servo(6, i);
 
-      PT_TIMER_DELAY(pt, aaa);
+      PT_TIMER_DELAY(pt, thighSpeed);
     }
 
-    for (i = 300; i >= 160 && PtEnable[3]; i -= 5) {
+    for (i = actionPosition[3]; i >= actionPosition[2] && PtEnable[3]; i -= step) {
       HCPCA9685.Servo(7, i);
 
-      PT_TIMER_DELAY(pt, bbb);
+      PT_TIMER_DELAY(pt, crusSpeed);
     }
 
     PT_YIELD(pt);
