@@ -125,13 +125,13 @@ static void receiveMessage(Pt *pt) {
   }
   PT_YIELD(pt);
 
-  if (receive.indexOf("_Der_Hund_geradeaus_#01") >= 0) {
+  if (receive.indexOf("_Der_Hund_geht_nach_geradeaus_#01") >= 0) {
     action = geradeaus;
   }
-  else if (receive.indexOf("_Der_Hund_stehen_#00") >= 0) {
+  else if (receive.indexOf("_Der_Hund_steht_#00") >= 0) {
     action = stehen;
   }
-  else if (receive.indexOf("_Der_Hund_sitzen_#05") >= 0) {
+  else if (receive.indexOf("_Der_Hund_sitzt_#05") >= 0) {
     action = sitzen;
   }
 
@@ -160,7 +160,7 @@ static void sitdownAction(Pt *pt) {
 
   PT_WAIT_UNTIL(pt, action == sitzen);
   stand();
-  PT_YIELD(pt);
+  PT_TIMER_DELAY(pt, 200);
 
   static int16_t i, j;
   static const uint16_t sitPos[8] = {260, 180, 30, 360, 80, 165, 340, 20};
@@ -214,11 +214,30 @@ static void sitdownAction(Pt *pt) {
   //
   PT_WAIT_UNTIL(pt, action != sitzen);
 
-  // 260, 90
-  for (i = 260, j = 90; i >= 90, j <= 260; i -= 5, j += 5) {
+  // ///////////////
+  for (i = 260, j = 90; i >= 30, j <= 320; i -= 5, j += 5) {
     HCPCA9685.Servo(0, i);
     HCPCA9685.Servo(4, j);
     delay(10);
+  }
+  delay(50);
+
+  for (i = 0; i < 52; i++) {
+    HCPCA9685.Servo(2, sitArg[2]);
+    sitArg[2] += 5;
+    if (sitArg[2] > 225) sitArg[2] = 225;
+
+    HCPCA9685.Servo(3, sitArg[3]);
+    sitArg[3] -= 5;
+    if (sitArg[3] < 100) sitArg[3] = 100;
+
+    HCPCA9685.Servo(6, sitArg[6]);
+    sitArg[6] -= 5;
+    if (sitArg[6] < 140) sitArg[6] = 140;
+
+    HCPCA9685.Servo(7, sitArg[7]);
+    sitArg[7] += 5;
+    if (sitArg[7] > 270) sitArg[7] = 270;
   }
   delay(500);
 
