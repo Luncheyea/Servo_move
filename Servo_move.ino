@@ -1,13 +1,16 @@
 #define PT_USE_TIMER
+#define DOG_DEGUB_MOD
 
-#include "HCPCA9685.h" // Include the HCPCA9685 library created by Andrew Davies
 #include <pt.h>
+#include <Wire.h>
+#include <HCPCA9685.h>
+#include <CapacitiveSensor.h>
 
 // 0x40 is default address of the PCA9685 Module
-// Define Library to use I2C communication
 HCPCA9685 HCPCA9685(0x40);
+CapacitiveSensor cs_4_5 = CapacitiveSensor(4, 5);
 
-Pt footPt[4], actiondPt, receivePt, sitzenPt, testPt;
+Pt footPt[4], actiondPt, receivePt, sitzenUndHandshakePt, testPt;
 bool PtEnable[4];
 uint16_t sycArc[4] = {0};
 int8_t actionIndex = 0;
@@ -28,17 +31,17 @@ enum DogAction {
 DogAction action;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   HCPCA9685.Init(SERVO_MODE); // Set to Servo Mode
   HCPCA9685.Sleep(false); // Wake up PCA9685 module
 
   //
-  //PT_INIT(&testPt);
+  PT_INIT(&testPt);
   //
   PT_INIT(&actiondPt);
   PT_INIT(&receivePt);
-  PT_INIT(&sitzenPt);
+  PT_INIT(&sitzenUndHandshakePt);
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
 
@@ -59,14 +62,14 @@ static void Action_mission(Pt *pt) {
   PtEnable[2] = false;
   PtEnable[3] = false;
   PT_YIELD(pt);
-  
+
   if (_action == stehen) {
     sycArc[0] = 0; sycArc[1] = 0; sycArc[2] = 0; sycArc[3] = 0;
 
     PT_YIELD(pt);
     stand();
   }
-  else if (_action == sitzen) {
+  else if (_action == sitzen || _action == haendeSchuetteln) {
 
     PT_YIELD(pt);
   } else if (_action == geradeaus || _action == links || _action == rechts || _action == zuruek) {
@@ -86,7 +89,7 @@ static void Action_mission(Pt *pt) {
 void loop() {
   Action_mission(&actiondPt);
   receiveMessage(&receivePt);
-  sitdownAction(&sitzenPt);
+  sitzen_und_handshakeAction(&sitzenUndHandshakePt);
   //
   //test(&testPt);
   //
@@ -102,15 +105,15 @@ static void test(Pt *pt) {
   action = stehen;
   PT_TIMER_DELAY(pt, 5000);
   action = geradeaus;
+  PT_TIMER_DELAY(pt, 4000);
+  action = rechts;
   PT_TIMER_DELAY(pt, 9000);
   action = links;
   PT_TIMER_DELAY(pt, 9000);
-  action = rechts;
-  PT_TIMER_DELAY(pt, 9000);
-  action = sitzen;
-  PT_TIMER_DELAY(pt, 9000);
-  action = stehen;
-  PT_TIMER_DELAY(pt, 5000);
+  //action = sitzen;
+  //PT_TIMER_DELAY(pt, 9000);
+  //action = stehen;
+  //PT_TIMER_DELAY(pt, 5000);
 
   PT_YIELD(pt);
   PT_END(pt);
@@ -174,10 +177,10 @@ void stand() {
   HCPCA9685.Servo(7, 250);
 }
 
-static void sitdownAction(Pt *pt) {
+static void sitzen_und_handshakeAction(Pt *pt) {
   PT_BEGIN(pt);
 
-  PT_WAIT_UNTIL(pt, action == sitzen);
+  PT_WAIT_UNTIL(pt, action == haendeSchuetteln || action == sitzen);
   stand();
   PT_TIMER_DELAY(pt, 500);
 
@@ -230,10 +233,34 @@ static void sitdownAction(Pt *pt) {
 
     PT_TIMER_DELAY(pt, 15);
   }
+  PT_YIELD(pt);
   //
-  PT_WAIT_UNTIL(pt, action != sitzen);
+label_handshake:
+  if (action == haendeSchuetteln) {
+    HCPCA9685.Servo(0, 90);
+    PT_TIMER_DELAY(pt, 100);
 
+    PT_WAIT_UNTIL(pt, action != haendeSchuetteln || cs_4_5.capacitiveSensor(30) >= 200);
+    PT_WAIT_UNTIL(pt, action != haendeSchuetteln || cs_4_5.capacitiveSensor(30) < 200);
+
+    for (i = 90; i <= sitPos[0]; i += 5) {
+      HCPCA9685.Servo(0, i);
+      PT_TIMER_DELAY(pt, 15);
+    }
+
+    if (action == haendeSchuetteln || action == sitzen) {
+      action = sitzen;
+      goto label_handshake;
+    }
+  } else if (action == sitzen) {
+    PT_WAIT_UNTIL(pt, action != sitzen);
+
+    if (action == haendeSchuetteln) {
+      goto label_handshake;
+    }
+  }
   // /////////////// thread lock
+  delay(500);
   for (i = 260, j = 90; i >= 30, j <= 320; i -= 5, j += 5) {
     HCPCA9685.Servo(0, i);
     HCPCA9685.Servo(4, j);
@@ -277,7 +304,7 @@ static void foot0_move(Pt *pt) {
     static int16_t i;
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{140, 210, 195,  60},
-      {180, 220, 115,  75},
+      {170, 210, 195,  60},
       {140, 210, 195,  60}
     };
 
@@ -306,7 +333,9 @@ static void foot0_move(Pt *pt) {
       PT_TIMER_DELAY(pt, crusSpeed);
     }
     sycArc[0]++;
+#ifdef DOG_DEGUB_MOD
     Serial.println(sycArc[0]);
+#endif
     PT_WAIT_UNTIL(pt, footSychronized(pt));
 
     PT_YIELD(pt);
@@ -321,7 +350,7 @@ static void foot1_move(Pt *pt) {
     static int16_t i;
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{210, 260, 200,  60},
-      {180, 225, 120,  80},
+      {230, 260, 200,  60},
       {210, 260, 200,  60}
     };
 
@@ -338,7 +367,9 @@ static void foot1_move(Pt *pt) {
       PT_TIMER_DELAY(pt, crusSpeed);
     }
     sycArc[1]++;
+#ifdef DOG_DEGUB_MOD
     Serial.println(sycArc[1]);
+#endif
     PT_WAIT_UNTIL(pt, footSychronized(pt));
 
     for (i = actionPosition[actionIndex][1]; i >= actionPosition[actionIndex][0] && PtEnable[1]; i -= step) {
@@ -368,7 +399,7 @@ static void foot2_move(Pt *pt) {
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{190, 130, 160, 300},
       {190, 130, 160, 300},
-      {155, 115, 225, 265}
+      {165, 130, 160, 300}
     };
 
     for (i = actionPosition[actionIndex][0]; i >= actionPosition[actionIndex][1] && PtEnable[2]; i -= step) {
@@ -384,7 +415,9 @@ static void foot2_move(Pt *pt) {
       PT_TIMER_DELAY(pt, crusSpeed);
     }
     sycArc[2]++;
+#ifdef DOG_DEGUB_MOD
     Serial.println(sycArc[2]);
+#endif
     PT_WAIT_UNTIL(pt, footSychronized(pt));
 
     for (i = actionPosition[actionIndex][1]; i <= actionPosition[actionIndex][0] && PtEnable[2]; i += step) {
@@ -414,7 +447,7 @@ static void foot3_move(Pt *pt) {
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{150,  90, 165, 300},
       {150,  90, 165, 300},
-      {160, 120, 230, 270}
+      {120,  90, 165, 300}
     };
 
     for (i = actionPosition[actionIndex][0]; i >= actionPosition[actionIndex][1] && PtEnable[3]; i -= step) {
@@ -444,7 +477,9 @@ static void foot3_move(Pt *pt) {
       PT_TIMER_DELAY(pt, crusSpeed);
     }
     sycArc[3]++;
+#ifdef DOG_DEGUB_MOD
     Serial.println(sycArc[3]);
+#endif
     PT_WAIT_UNTIL(pt, footSychronized(pt));
 
     PT_YIELD(pt);
