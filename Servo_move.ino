@@ -165,13 +165,13 @@ static void receiveMessage(Pt *pt) {
 
 void stand() {
   HCPCA9685.Servo(0, 200);
-  HCPCA9685.Servo(1,  95);
+  HCPCA9685.Servo(1,  120);
 
   HCPCA9685.Servo(2, 205);
-  HCPCA9685.Servo(3, 100);
+  HCPCA9685.Servo(3, 130);
 
-  HCPCA9685.Servo(4, 135);
-  HCPCA9685.Servo(5, 245);
+  HCPCA9685.Servo(4, 125);
+  HCPCA9685.Servo(5, 220);
 
   HCPCA9685.Servo(6, 140);
   HCPCA9685.Servo(7, 250);
@@ -185,7 +185,7 @@ static void sitzen_und_handshakeAction(Pt *pt) {
   PT_TIMER_DELAY(pt, 500);
 
   static int16_t i, j;
-  static const uint16_t sitPos[8] = {260, 180, 30, 360, 80, 165, 340, 20};
+  static const uint16_t sitPos[8] = {280, 180, 30, 370, 70, 150, 350, 30};
   static uint16_t sitArg[8];
   sitArg[0] = 200; sitArg[1] = 90;  sitArg[2] = 225; sitArg[3] = 100;
   sitArg[4] = 135; sitArg[5] = 270; sitArg[6] = 140; sitArg[7] = 270;
@@ -237,13 +237,16 @@ static void sitzen_und_handshakeAction(Pt *pt) {
   //
 label_handshake:
   if (action == haendeSchuetteln) {
-    HCPCA9685.Servo(0, 90);
-    PT_TIMER_DELAY(pt, 100);
+    HCPCA9685.Servo(0, 200);
+    HCPCA9685.Servo(1, 10);
+    PT_TIMER_DELAY(pt, 500);
 
     PT_WAIT_UNTIL(pt, action != haendeSchuetteln || cs_4_5.capacitiveSensor(30) >= 200);
+    PT_TIMER_DELAY(pt, 500);
     PT_WAIT_UNTIL(pt, action != haendeSchuetteln || cs_4_5.capacitiveSensor(30) < 200);
 
-    for (i = 90; i <= sitPos[0]; i += 5) {
+    HCPCA9685.Servo(1, 160);
+    for (i = 200; i <= sitPos[0]; i += 5) {
       HCPCA9685.Servo(0, i);
       PT_TIMER_DELAY(pt, 15);
     }
