@@ -10,9 +10,10 @@
 HCPCA9685 HCPCA9685(0x40);
 CapacitiveSensor cs_4_5 = CapacitiveSensor(4, 5);
 
-Pt footPt[4], actiondPt, receivePt, sitzenUndHandshakePt, testPt;
+Pt footPt[4], actiondPt, receivePt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
 bool PtEnable[4];
 uint16_t sycArc[4] = {0};
+static uint16_t watchingTime;
 int8_t actionIndex = 0;
 
 enum DogAction {
@@ -25,7 +26,8 @@ enum DogAction {
 
   sitzen = 5,
   hinlegen = 6,
-  haendeSchuetteln = 7
+  haendeSchuetteln = 7,
+  schlafen = 8
 };
 
 DogAction action;
@@ -42,12 +44,15 @@ void setup() {
   PT_INIT(&actiondPt);
   PT_INIT(&receivePt);
   PT_INIT(&sitzenUndHandshakePt);
+  PT_INIT(&liePt);
+  PT_INIT(&watchdogPt);
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
 
   action = stehen;
   stand();
   delay(2000);
+  watchingTime = millis();
 }
 
 static void Action_mission(Pt *pt) {
@@ -69,7 +74,7 @@ static void Action_mission(Pt *pt) {
     PT_YIELD(pt);
     stand();
   }
-  else if (_action == sitzen || _action == haendeSchuetteln) {
+  else if (_action == sitzen || _action == haendeSchuetteln || _action == hinlegen ) {
 
     PT_YIELD(pt);
   } else if (_action == geradeaus || _action == links || _action == rechts || _action == zuruek) {
@@ -90,6 +95,7 @@ void loop() {
   Action_mission(&actiondPt);
   receiveMessage(&receivePt);
   sitzen_und_handshakeAction(&sitzenUndHandshakePt);
+  lieAction(&liePt);
   //
   //test(&testPt);
   //
@@ -97,6 +103,8 @@ void loop() {
   foot1_move(&footPt[1]);
   foot2_move(&footPt[2]);
   foot3_move(&footPt[3]);
+  //
+  watchDog(&watchdogPt);
 }
 
 static void test(Pt *pt) {
@@ -158,37 +166,40 @@ static void receiveMessage(Pt *pt) {
     action = haendeSchuetteln;
   }
   PT_YIELD(pt);
+  watchingTime = millis();
+  PT_YIELD(pt);
 
   PT_END(pt);
 }
 
-
+static const uint16_t standArg[8] = { 200, 120, 205, 130, 125, 220, 140, 250 };
 void stand() {
-  HCPCA9685.Servo(0, 200);
-  HCPCA9685.Servo(1,  120);
+  HCPCA9685.Servo(0, standArg[0]);
+  HCPCA9685.Servo(1, standArg[1]);
 
-  HCPCA9685.Servo(2, 205);
-  HCPCA9685.Servo(3, 130);
+  HCPCA9685.Servo(2, standArg[2]);
+  HCPCA9685.Servo(3, standArg[3]);
 
-  HCPCA9685.Servo(4, 125);
-  HCPCA9685.Servo(5, 220);
+  HCPCA9685.Servo(4, standArg[4]);
+  HCPCA9685.Servo(5, standArg[5]);
 
-  HCPCA9685.Servo(6, 140);
-  HCPCA9685.Servo(7, 250);
+  HCPCA9685.Servo(6, standArg[6]);
+  HCPCA9685.Servo(7, standArg[7]);
 }
 
 static void sitzen_und_handshakeAction(Pt *pt) {
   PT_BEGIN(pt);
 
   PT_WAIT_UNTIL(pt, action == haendeSchuetteln || action == sitzen);
+  PT_TIMER_DELAY(pt, 10);
   stand();
   PT_TIMER_DELAY(pt, 500);
 
   static int16_t i, j;
   static const uint16_t sitPos[8] = {280, 180, 30, 370, 70, 150, 350, 30};
   static uint16_t sitArg[8];
-  sitArg[0] = 200; sitArg[1] = 90;  sitArg[2] = 225; sitArg[3] = 100;
-  sitArg[4] = 135; sitArg[5] = 270; sitArg[6] = 140; sitArg[7] = 270;
+  sitArg[0] = standArg[0]; sitArg[1] = standArg[1]; sitArg[2] = standArg[2]; sitArg[3] = standArg[3];
+  sitArg[4] = standArg[4]; sitArg[5] = standArg[5]; sitArg[6] = standArg[6]; sitArg[7] = standArg[7];
 
   for (i = 0; i < 52; i++) {
     HCPCA9685.Servo(0, sitArg[0]);
@@ -298,6 +309,117 @@ label_handshake:
   PT_END(pt);
 }
 
+static void lieAction(Pt *pt) {
+  PT_BEGIN(pt);
+
+  PT_WAIT_UNTIL(pt, action == hinlegen);
+  PT_TIMER_DELAY(pt, 10);
+  stand();
+  PT_TIMER_DELAY(pt, 500);
+
+  static uint16_t i;
+  static const int16_t liePos[8] = { 0, 180, 370, 180, 370, 150, 0, 200 };
+  static int16_t lieArg[9];
+  lieArg[0] = standArg[0]; lieArg[1] = standArg[1]; lieArg[2] = standArg[2]; lieArg[3] = standArg[3];
+  lieArg[4] = standArg[4]; lieArg[5] = standArg[5]; lieArg[6] = standArg[6]; lieArg[7] = standArg[7];
+  //200, 60, 165, 50, 245, 70, 140, 50
+  //40, 12,  33, 10,  49, 14,  28, 10
+  for (i = 0; i < 49; i++) {
+    HCPCA9685.Servo(0, lieArg[0]);
+    lieArg[0] -= 5;
+    if (lieArg[0] < liePos[0]) lieArg[0] = liePos[0];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(1, lieArg[1]);
+    lieArg[1] += 5;
+    if (lieArg[1] > liePos[1]) lieArg[1] = liePos[1];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(2, lieArg[2]);
+    lieArg[2] += 5;
+    if (lieArg[2] > liePos[2]) lieArg[2] = liePos[2];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(3, lieArg[3]);
+    lieArg[3] += 5;
+    if (lieArg[3] > liePos[3]) lieArg[3] = liePos[3];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(4, lieArg[4]);
+    lieArg[4] += 5;
+    if (lieArg[4] > liePos[4]) lieArg[4] = liePos[4];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(5, lieArg[5]);
+    lieArg[5] -= 5;
+    if (lieArg[5] < liePos[5]) lieArg[5] = liePos[5];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(6, lieArg[6]);
+    lieArg[6] -= 5;
+    if (lieArg[6] < liePos[6]) lieArg[6] = liePos[6];
+    PT_YIELD(pt);
+
+    HCPCA9685.Servo(7, lieArg[7]);
+    lieArg[7] -= 5;
+    if (lieArg[7] < liePos[7]) lieArg[7] = liePos[7];
+    PT_YIELD(pt);
+
+    PT_TIMER_DELAY(pt, 15);
+  }
+  PT_YIELD(pt);
+
+  PT_WAIT_UNTIL(pt, action != hinlegen);
+
+  // /////////////// thread lock
+  delay(500);
+  for (i = 0; i < 33; i++) {
+    HCPCA9685.Servo(2, lieArg[2]);
+    lieArg[2] -= 5;
+    if (lieArg[2] < standArg[2]) lieArg[2] = standArg[2];
+
+    HCPCA9685.Servo(3, lieArg[3]);
+    lieArg[3] -= 5;
+    if (lieArg[3] < standArg[3]) lieArg[3] = standArg[3];
+
+    HCPCA9685.Servo(6, lieArg[6]);
+    lieArg[6] += 5;
+    if (lieArg[6] > standArg[6]) lieArg[6] = standArg[6];
+
+    HCPCA9685.Servo(7, lieArg[7]);
+    lieArg[7] += 5;
+    if (lieArg[7] > standArg[7]) lieArg[7] = standArg[7];
+
+    delay(15);
+  }
+  delay(500);
+
+  for (i = 0; i < 49; i++) {
+    HCPCA9685.Servo(0, lieArg[0]);
+    lieArg[0] += 5;
+    if (lieArg[0] > standArg[0]) lieArg[0] = standArg[0];
+
+    HCPCA9685.Servo(1, lieArg[1]);
+    lieArg[1] -= 5;
+    if (lieArg[1] < standArg[1]) lieArg[1] = standArg[1];
+
+    HCPCA9685.Servo(4, lieArg[4]);
+    lieArg[4] -= 5;
+    if (lieArg[4] < standArg[4]) lieArg[4] = standArg[4];
+
+    HCPCA9685.Servo(5, lieArg[5]);
+    lieArg[5] += 5;
+    if (lieArg[5] > standArg[5]) lieArg[5] = standArg[5];
+
+    delay(15);
+  }
+  delay(500);
+
+  stand();
+  PT_YIELD(pt);
+
+  PT_END(pt);
+}
 
 /////////////////////////////////////////////////
 static void foot0_move(Pt *pt) {
@@ -501,6 +623,22 @@ static bool footSychronized(Pt *pt) {
   else
     return false;
 }
+
+static void watchDog(Pt *pt) {
+  PT_BEGIN(pt);
+  while (true) {
+    if ((millis() - watchingTime) > 60000) {
+      action = hinlegen;
+      watchingTime = millis();
+    }
+#ifdef DOG_DEGUB_MOD
+    Serial.println(millis() - watchingTime);
+#endif
+    PT_YIELD(pt);
+  }
+  PT_END(pt);
+}
+
 
 
 
