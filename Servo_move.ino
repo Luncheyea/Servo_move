@@ -13,7 +13,7 @@ CapacitiveSensor cs_4_5 = CapacitiveSensor(4, 5);
 Pt footPt[4], actiondPt, receivePt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
 bool PtEnable[4];
 uint16_t sycArc[4] = {0};
-static uint16_t watchingTime;
+static uint32_t watchingTime;
 int8_t actionIndex = 0;
 
 enum DogAction {
@@ -87,6 +87,7 @@ static void Action_mission(Pt *pt) {
     PT_YIELD(pt);
   }
   actionIndex = action - 1;
+  watchingTime = millis();
 
   PT_END(pt);
 }
@@ -143,30 +144,36 @@ static void receiveMessage(Pt *pt) {
 
   if (receive.indexOf("_Der_Hund_steht_#00") >= 0) {
     action = stehen;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_geht_nach_geradeaus_#01") >= 0) {
     action = geradeaus;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_geht_nach_links_#02") >= 0) {
     action = links;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_geht_nach_rechts_#03") >= 0) {
     action = rechts;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_geht_nach_zuruek_#04") >= 0) {
     action = zuruek;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_sitzt_#05") >= 0) {
     action = sitzen;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_hinlegt_#06") >= 0) {
     action = hinlegen;
+    watchingTime = millis();
   }
   else if (receive.indexOf("_Der_Hund_schuettelt_haende_#07") >= 0) {
     action = haendeSchuetteln;
+    watchingTime = millis();
   }
-  PT_YIELD(pt);
-  watchingTime = millis();
   PT_YIELD(pt);
 
   PT_END(pt);
@@ -275,7 +282,7 @@ label_handshake:
   }
   // /////////////// thread lock
   delay(500);
-  for (i = 260, j = 90; i >= 30, j <= 320; i -= 5, j += 5) {
+  for (i = sitArg[0], j = sitArg[4]; i >= 30, j <= 320; i -= 5, j += 5) {
     HCPCA9685.Servo(0, i);
     HCPCA9685.Servo(4, j);
     delay(10);
@@ -285,19 +292,19 @@ label_handshake:
   for (i = 0; i < 52; i++) {
     HCPCA9685.Servo(2, sitArg[2]);
     sitArg[2] += 5;
-    if (sitArg[2] > 225) sitArg[2] = 225;
+    if (sitArg[2] > standArg[2]) sitArg[2] = standArg[2];
 
     HCPCA9685.Servo(3, sitArg[3]);
     sitArg[3] -= 5;
-    if (sitArg[3] < 100) sitArg[3] = 100;
+    if (sitArg[3] < standArg[3]) sitArg[3] = standArg[3];
 
     HCPCA9685.Servo(6, sitArg[6]);
     sitArg[6] -= 5;
-    if (sitArg[6] < 140) sitArg[6] = 140;
+    if (sitArg[6] < standArg[6]) sitArg[6] = standArg[6];
 
     HCPCA9685.Servo(7, sitArg[7]);
     sitArg[7] += 5;
-    if (sitArg[7] > 270) sitArg[7] = 270;
+    if (sitArg[7] > standArg[7]) sitArg[7] = standArg[7];
 
     delay(10);
   }
@@ -624,14 +631,15 @@ static bool footSychronized(Pt *pt) {
     return false;
 }
 
+#define DOG_WATCHDOG_DEGUB_MOD
 static void watchDog(Pt *pt) {
   PT_BEGIN(pt);
   while (true) {
-    if ((millis() - watchingTime) > 60000) {
+    if ((millis() - watchingTime) > 120000) {
       action = hinlegen;
       watchingTime = millis();
     }
-#ifdef DOG_DEGUB_MOD
+#ifdef DOG_WATCHDOG_DEGUB_MOD
     Serial.println(millis() - watchingTime);
 #endif
     PT_YIELD(pt);
