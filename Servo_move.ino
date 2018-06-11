@@ -10,10 +10,11 @@
 HCPCA9685 HCPCA9685(0x40);
 CapacitiveSensor cs_4_5 = CapacitiveSensor(4, 5);
 
-Pt footPt[4], actiondPt, receivePt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
+Pt footPt[4], actiondPt, statePt, receivePt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
 bool PtEnable[4];
-uint16_t sycArc[4] = {0};
-static uint32_t watchingTime;
+const uint8_t RedLedPin = 2, GreenLedPin = 3;
+uint16_t sycArc[4] = { 0 };
+uint32_t watchingTime = 0;
 int8_t actionIndex = 0;
 
 enum DogAction {
@@ -27,10 +28,12 @@ enum DogAction {
   sitzen = 5,
   hinlegen = 6,
   haendeSchuetteln = 7,
-  schlafen = 8
+  schlafen = 8,
+  kennenlernen = 15,
+  kennengelernt = 16
 };
 
-DogAction action;
+DogAction action, state;
 
 void setup() {
   Serial.begin(115200);
@@ -42,13 +45,18 @@ void setup() {
   PT_INIT(&testPt);
   //
   PT_INIT(&actiondPt);
+  PT_INIT(&statePt);
   PT_INIT(&receivePt);
   PT_INIT(&sitzenUndHandshakePt);
   PT_INIT(&liePt);
   PT_INIT(&watchdogPt);
   for (uint8_t i = 0; i < 4; i++)
     PT_INIT(&footPt[i]);
-
+  //
+  pinMode(RedLedPin, OUTPUT);
+  pinMode(GreenLedPin, OUTPUT);
+  //
+  state = kennengelernt;
   action = stehen;
   stand();
   delay(2000);
@@ -92,8 +100,31 @@ static void Action_mission(Pt *pt) {
   PT_END(pt);
 }
 
+static void State_mission(Pt *pt) {
+  PT_BEGIN(pt);
+
+  static DogAction _state = stehen;
+  PT_WAIT_UNTIL(pt, _state != state);
+  _state = state;
+  
+  if (_state == kennengelernt){
+      digitalWrite(GreenLedPin, HIGH);
+      digitalWrite(RedLedPin, LOW);
+  }
+  else if (_state == kennenlernen){
+      digitalWrite(GreenLedPin, LOW);
+      digitalWrite(RedLedPin, HIGH);
+  }
+  
+  PT_YIELD(pt);
+  watchingTime = millis();
+
+  PT_END(pt);
+}
+
 void loop() {
   Action_mission(&actiondPt);
+  State_mission(&statePt);
   receiveMessage(&receivePt);
   sitzen_und_handshakeAction(&sitzenUndHandshakePt);
   lieAction(&liePt);
@@ -174,6 +205,15 @@ static void receiveMessage(Pt *pt) {
     action = haendeSchuetteln;
     watchingTime = millis();
   }
+  else if (receive.indexOf("_Der_Hund_lernt_jetzt_kennen_#15") >= 0) {
+    state = kennenlernen;
+    watchingTime = millis();
+  }
+  else if (receive.indexOf("_Der_Hund_hat_kennengelernt_#16") >= 0) {
+    state = kennengelernt;
+    watchingTime = millis();
+  }
+  
   PT_YIELD(pt);
 
   PT_END(pt);
@@ -429,6 +469,7 @@ static void lieAction(Pt *pt) {
 }
 
 /////////////////////////////////////////////////
+int16_t links_slant = 30, rechts_slant = 30;
 static void foot0_move(Pt *pt) {
   PT_BEGIN(pt);
   while (1) {
@@ -436,9 +477,9 @@ static void foot0_move(Pt *pt) {
     static int16_t i;
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{140, 210, 195,  60},
-      {170, 210, 195,  60},
-      {140, 210, 195,  60}
-    };
+                                                  {170, 210, 195,  60},
+                                                  {140, 210, 195,  60}
+                                                 };
 
     for (i = actionPosition[actionIndex][0]; i <= actionPosition[actionIndex][1] && PtEnable[0]; i += step) {
       HCPCA9685.Servo(0, i);
@@ -482,9 +523,9 @@ static void foot1_move(Pt *pt) {
     static int16_t i;
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{210, 260, 200,  60},
-      {230, 260, 200,  60},
-      {210, 260, 200,  60}
-    };
+                                                  {230, 260, 200,  60},
+                                                  {210, 260, 200,  60}
+                                                 };
 
     for (i = actionPosition[actionIndex][0]; i <= actionPosition[actionIndex][1] && PtEnable[1]; i += step) {
       HCPCA9685.Servo(2, i);
@@ -530,9 +571,9 @@ static void foot2_move(Pt *pt) {
     static int16_t i;
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{190, 130, 160, 300},
-      {190, 130, 160, 300},
-      {165, 130, 160, 300}
-    };
+                                                  {190, 130, 160, 300},
+                                                  {165, 130, 160, 300}
+                                                 };
 
     for (i = actionPosition[actionIndex][0]; i >= actionPosition[actionIndex][1] && PtEnable[2]; i -= step) {
       HCPCA9685.Servo(4, i);
@@ -578,9 +619,9 @@ static void foot3_move(Pt *pt) {
     static int16_t i;
     static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
     static const uint16_t actionPosition[3][4] = {{150,  90, 165, 300},
-      {150,  90, 165, 300},
-      {120,  90, 165, 300}
-    };
+                                                  {150,  90, 165, 300},
+                                                  {120,  90, 165, 300}
+                                                 };
 
     for (i = actionPosition[actionIndex][0]; i >= actionPosition[actionIndex][1] && PtEnable[3]; i -= step) {
       HCPCA9685.Servo(6, i);
@@ -631,7 +672,6 @@ static bool footSychronized(Pt *pt) {
     return false;
 }
 
-#define DOG_WATCHDOG_DEGUB_MOD
 static void watchDog(Pt *pt) {
   PT_BEGIN(pt);
   while (true) {
@@ -639,9 +679,8 @@ static void watchDog(Pt *pt) {
       action = hinlegen;
       watchingTime = millis();
     }
-#ifdef DOG_WATCHDOG_DEGUB_MOD
-    Serial.println(millis() - watchingTime);
-#endif
+
+    //Serial.println(millis() - watchingTime);
     PT_YIELD(pt);
   }
   PT_END(pt);
