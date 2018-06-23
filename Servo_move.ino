@@ -130,7 +130,7 @@ void loop() {
   sitzen_und_handshakeAction(&sitzenUndHandshakePt);
   lieAction(&liePt);
   //
-  //test(&testPt);
+  test(&testPt);
   //
   foot0_move(&footPt[0]);
   foot1_move(&footPt[1]);
@@ -147,9 +147,9 @@ static void test(Pt *pt) {
   PT_TIMER_DELAY(pt, 5000);
   action = geradeaus;
   PT_TIMER_DELAY(pt, 4000);
-  //action = rechts;
+  action = rechts;
   PT_TIMER_DELAY(pt, 9000);
-  //action = links;
+  action = links;
   PT_TIMER_DELAY(pt, 9000);
   //action = sitzen;
   //PT_TIMER_DELAY(pt, 9000);
@@ -477,14 +477,15 @@ static void lieAction(Pt * pt) {
 
 /////////////////////////////////////////////////
 int16_t links_slant = 30, rechts_slant = 30;
+int16_t backfoot_feedback = 40, forkfoot_feedback = 20;
 static void foot0_move(Pt *pt) {
   PT_BEGIN(pt);
 
   static int16_t i;
   static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
-  static const uint16_t actionPosition[3][4] = {{standArg[0] - links_slant, standArg[0] + links_slant, 195,  60},
-    {170, 210, 195,  60},
-    {140, 210, 195,  60}
+  static const uint16_t actionPosition[3][4] = {{standArg[0] - links_slant - forkfoot_feedback, standArg[0] + links_slant - forkfoot_feedback, 195,  60},
+    {standArg[0] - 20 - forkfoot_feedback, standArg[0] + 20 - forkfoot_feedback, 195,  60},
+    {standArg[0] - links_slant - forkfoot_feedback, standArg[0] + links_slant - forkfoot_feedback, 195,  60}
   };
 
   for (;;) {
@@ -530,9 +531,9 @@ static void foot1_move(Pt *pt) {
 
   static int16_t i;
   static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
-  static const uint16_t actionPosition[3][4] = {{standArg[2] - links_slant, standArg[2] + links_slant, 200,  60},
-    {230, 260, 200,  60},
-    {210, 260, 200,  60}
+  static const uint16_t actionPosition[3][4] = {{standArg[2] - links_slant + backfoot_feedback, standArg[2] + links_slant + backfoot_feedback, 200,  60},
+    {standArg[2] - 20 + backfoot_feedback, standArg[2] + 20 + backfoot_feedback, 200,  60},
+    {standArg[2] - links_slant + backfoot_feedback, standArg[2] + links_slant + backfoot_feedback, 200,  60}
   };
 
   for (;;) {
@@ -580,9 +581,9 @@ static void foot2_move(Pt *pt) {
 
   static int16_t i;
   static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
-  static const uint16_t actionPosition[3][4] = {{standArg[4] + rechts_slant, standArg[4] - rechts_slant, 160, 300},
-    {190, 130, 160, 300},
-    {165, 130, 160, 300}
+  static const uint16_t actionPosition[3][4] = {{standArg[4] + rechts_slant + forkfoot_feedback, standArg[4] - rechts_slant + forkfoot_feedback, 160, 300},
+    {standArg[4] + rechts_slant + forkfoot_feedback, standArg[4] - rechts_slant + forkfoot_feedback, 160, 300},
+    {standArg[4] + 20 + forkfoot_feedback, standArg[4] - 20 + forkfoot_feedback, 160, 300}
   };
 
   for (;;) {
@@ -630,9 +631,9 @@ static void foot3_move(Pt *pt) {
 
   static int16_t i;
   static const uint8_t thighSpeed = 15, crusSpeed = 10, step = 5;
-  static const uint16_t actionPosition[3][4] = {{standArg[6] + rechts_slant,  standArg[6] - rechts_slant, 165, 300},
-    {150,  90, 165, 300},
-    {120,  90, 165, 300}
+  static const uint16_t actionPosition[3][4] = {{standArg[6] + rechts_slant - backfoot_feedback,  standArg[6] - rechts_slant - backfoot_feedback, 165, 300},
+    {standArg[6] + rechts_slant - backfoot_feedback,  standArg[6] - rechts_slant - backfoot_feedback, 165, 300},
+    {standArg[6] + 20 - backfoot_feedback,  standArg[6] - 20 - backfoot_feedback, 165, 300}
   };
 
   while (1) {
@@ -689,7 +690,7 @@ static bool footSychronized(Pt *pt) {
 
 static void watchDog(Pt *pt) {
   PT_BEGIN(pt);
-  while (true) {
+  for(;;) {
     if ((millis() - watchingTime) > 420000) {
       action = hinlegen;
       watchingTime = millis();
