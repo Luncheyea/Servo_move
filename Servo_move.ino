@@ -1,21 +1,26 @@
 #define PT_USE_TIMER
-#define DOG_DEGUB_MOD
+//#define DOG_DEGUB_MOD
 
 #include <pt.h>
 #include <Wire.h>
+#include <MPU9250.h>
 #include <HCPCA9685.h>
 #include <CapacitiveSensor.h>
 
 // 0x40 is default address of the PCA9685 Module
 HCPCA9685 HCPCA9685(0x40);
+// an MPU9250 object with the MPU-9250 sensor on I2C bus 0 with address 0x68
+MPU9250 IMU(Wire, 0x68);
 CapacitiveSensor cs_4_5 = CapacitiveSensor(4, 5);
 
-Pt footPt[4], actiondPt, statePt, receivePt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
+Pt footPt[4], actiondPt, statePt, receivePt, directionPt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
 bool PtEnable[4];
 const uint8_t RedLedPin = 2, GreenLedPin = 3;
 uint16_t sycArc[4] = { 0 };
 uint32_t watchingTime = 0;
 int8_t actionIndex = 0;
+int16_t links_slant = 30, rechts_slant = 30;
+int16_t backfoot_feedback = 40, forkfoot_feedback = 20;
 
 enum DogAction {
   stehen = 0,
@@ -31,9 +36,15 @@ enum DogAction {
   schlafen = 8,
   kennenlernen = 15,
   kennengelernt = 16
-};
+} action, state;
 
-DogAction action, state;
+//DogAction action, state;
+
+enum OffsetDirection {
+  left = -1,
+  middle = 0,
+  right = 1
+} offset_direction = middle;
 
 void setup() {
   Serial.begin(115200);
@@ -41,12 +52,19 @@ void setup() {
   HCPCA9685.Init(SERVO_MODE); // Set to Servo Mode
   HCPCA9685.Sleep(false); // Wake up PCA9685 module
 
+  IMU.begin();
+  IMU.setAccelRange(MPU9250::ACCEL_RANGE_2G);
+  IMU.setGyroRange(MPU9250::GYRO_RANGE_250DPS);
+  IMU.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_184HZ);
+  IMU.setSrd(19); // setting SRD to 19 for a 50 Hz update ratU.setSrd(19);
+
   //
   PT_INIT(&testPt);
   //
   PT_INIT(&actiondPt);
   PT_INIT(&statePt);
   PT_INIT(&receivePt);
+  PT_INIT(&directionPt);
   PT_INIT(&sitzenUndHandshakePt);
   PT_INIT(&liePt);
   PT_INIT(&watchdogPt);
@@ -87,6 +105,8 @@ static void Action_mission(Pt *pt) {
     PT_YIELD(pt);
   } else if (_action == geradeaus || _action == links || _action == rechts || _action == zuruek) {
     actionIndex = action - 1;
+    links_slant = 30;
+    rechts_slant = 30;
 
     PtEnable[0] = true;
     PtEnable[3] = true;
@@ -127,6 +147,7 @@ void loop() {
   Action_mission(&actiondPt);
   State_mission(&statePt);
   receiveMessage(&receivePt);
+  sensingDirection(&directionPt);
   sitzen_und_handshakeAction(&sitzenUndHandshakePt);
   lieAction(&liePt);
   //
@@ -147,9 +168,9 @@ static void test(Pt *pt) {
   PT_TIMER_DELAY(pt, 5000);
   action = geradeaus;
   PT_TIMER_DELAY(pt, 4000);
-  action = rechts;
+  //action = rechts;
   PT_TIMER_DELAY(pt, 9000);
-  action = links;
+  //action = links;
   PT_TIMER_DELAY(pt, 9000);
   //action = sitzen;
   //PT_TIMER_DELAY(pt, 9000);
@@ -475,9 +496,75 @@ static void lieAction(Pt * pt) {
   PT_END(pt);
 }
 
-/////////////////////////////////////////////////
-int16_t links_slant = 30, rechts_slant = 30;
-int16_t backfoot_feedback = 40, forkfoot_feedback = 20;
+////////////////////////////////////////////////////////////////////////////////////
+
+#define double2(x) (((int)(x * 100.0)) / 100.0)
+static void sensingDirection(Pt *pt) {
+  PT_BEGIN(pt);
+
+  static double mx, my, gz;
+  static double offset = 0.0;
+  static int16_t original_links_slant, original_rechts_slant;
+
+  for (;;) {
+    PT_WAIT_UNTIL(pt, action == geradeaus);
+    offset = 0.0;
+    original_links_slant = links_slant;
+    original_rechts_slant = rechts_slant;
+
+    for (;;) {
+      // read the sensor
+      IMU.readSensor();
+      gz = IMU.getGyroZ_rads();
+      PT_YIELD(pt);
+
+      offset += double2(gz);
+
+      if (abs(offset) > 2) {
+        if (offset > 0) {
+          offset_direction = right;
+        }
+        else {
+          offset_direction = left;
+        }
+      }
+      else {
+        offset_direction = middle;
+      }
+      PT_YIELD(pt);
+
+
+      if (offset_direction == left) {
+        //Serial.println("<<");
+        links_slant = 40;
+        rechts_slant = 20;
+      }
+      else if (offset_direction == right) {
+        //Serial.println(">>");
+        links_slant = 20;
+        rechts_slant = 40;
+      }
+      else if (offset_direction == middle) {
+        //Serial.println("||");
+        links_slant = original_links_slant;
+        rechts_slant = original_rechts_slant;
+      }
+
+
+      PT_TIMER_DELAY(pt, 30);
+      if (action != geradeaus) {
+        links_slant = original_links_slant;
+        rechts_slant = original_rechts_slant;
+
+        break;
+      }
+    }
+    PT_YIELD(pt);
+  }
+
+  PT_END(pt);
+}
+
 static void foot0_move(Pt *pt) {
   PT_BEGIN(pt);
 
@@ -690,7 +777,7 @@ static bool footSychronized(Pt *pt) {
 
 static void watchDog(Pt *pt) {
   PT_BEGIN(pt);
-  for(;;) {
+  for (;;) {
     if ((millis() - watchingTime) > 420000) {
       action = hinlegen;
       watchingTime = millis();
