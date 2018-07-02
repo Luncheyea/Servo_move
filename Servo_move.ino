@@ -15,7 +15,7 @@ CapacitiveSensor cs_4_5 = CapacitiveSensor(4, 5);
 
 Pt footPt[4], actiondPt, statePt, receivePt, directionPt, sitzenUndHandshakePt, liePt, watchdogPt, testPt;
 bool PtEnable[4];
-const uint8_t RedLedPin = 2, GreenLedPin = 3;
+const uint8_t RedLedPin = 2, GreenLedPin = 3, YellowLedPin = 6;
 uint16_t sycArc[4] = { 0 };
 uint32_t watchingTime = 0;
 int8_t actionIndex = 0;
@@ -34,8 +34,11 @@ enum DogAction {
   hinlegen = 6,
   haendeSchuetteln = 7,
   schlafen = 8,
+
+  // state
   kennenlernen = 15,
-  kennengelernt = 16
+  allesGute = 16,
+  sprechen = 17
 } action, state;
 
 enum OffsetDirection {
@@ -72,7 +75,7 @@ void setup() {
   pinMode(RedLedPin, OUTPUT);
   pinMode(GreenLedPin, OUTPUT);
   //
-  state = kennengelernt;
+  state = allesGute;
   action = stehen;
   stand();
   delay(2000);
@@ -131,13 +134,20 @@ static void State_mission(Pt *pt) {
     PT_WAIT_UNTIL(pt, _state != state);
     _state = state;
 
-    if (_state == kennengelernt) {
+    if (_state == allesGute) {
       digitalWrite(GreenLedPin, HIGH);
       digitalWrite(RedLedPin, LOW);
+      digitalWrite(YellowLedPin, LOW);
     }
     else if (_state == kennenlernen) {
       digitalWrite(GreenLedPin, LOW);
       digitalWrite(RedLedPin, HIGH);
+      digitalWrite(YellowLedPin, LOW);
+    }
+    else if (_state == sprechen) {
+      digitalWrite(GreenLedPin, LOW);
+      digitalWrite(RedLedPin, LOW);
+      digitalWrite(YellowLedPin, HIGH);
     }
 
     PT_YIELD(pt);
@@ -240,7 +250,15 @@ static void receiveMessage(Pt *pt) {
       watchingTime = millis();
     }
     else if (receive.indexOf("_Der_Hund_hat_kennengelernt_#16") >= 0) {
-      state = kennengelernt;
+      state = allesGute;
+      watchingTime = millis();
+    }
+    else if (receive.indexOf("_Man_kann_sprechen_#17") >= 0) {
+      state = sprechen;
+      watchingTime = millis();
+    }
+    else if (receive.indexOf("_Man_kann_nicht_sprechen_#18") >= 0) {
+      state = allesGute;
       watchingTime = millis();
     }
 
@@ -261,6 +279,33 @@ void stand() {
   HCPCA9685.Servo(4, standArg[4]);
   HCPCA9685.Servo(5, standArg[5]);
 
+  HCPCA9685.Servo(6, standArg[6]);
+  HCPCA9685.Servo(7, standArg[7]);
+}
+
+void stepping() {
+  delay(100);
+  HCPCA9685.Servo(0, standArg[0] - 50);
+  HCPCA9685.Servo(1, standArg[1] + 30);
+  delay(300);
+  HCPCA9685.Servo(0, standArg[0]);
+  HCPCA9685.Servo(1, standArg[1]);
+
+  HCPCA9685.Servo(2, standArg[2] - 50);
+  HCPCA9685.Servo(3, standArg[3] + 30);
+  delay(300);
+  HCPCA9685.Servo(2, standArg[2]);
+  HCPCA9685.Servo(3, standArg[3]);
+
+  HCPCA9685.Servo(4, standArg[4] + 50);
+  HCPCA9685.Servo(5, standArg[5] - 30);
+  delay(300);
+  HCPCA9685.Servo(4, standArg[4]);
+  HCPCA9685.Servo(5, standArg[5]);
+
+  HCPCA9685.Servo(6, standArg[6] + 50);
+  HCPCA9685.Servo(7, standArg[7] - 30);
+  delay(300);
   HCPCA9685.Servo(6, standArg[6]);
   HCPCA9685.Servo(7, standArg[7]);
 }
@@ -330,6 +375,18 @@ static void sitzen_und_handshakeAction(Pt *pt) {
       PT_TIMER_DELAY(pt, 15);
     }
     PT_YIELD(pt);
+
+    HCPCA9685.Servo(0, sitPos[0] + 30);
+    HCPCA9685.Servo(1, sitPos[1] - 30);
+    PT_TIMER_DELAY(pt, 300);
+    HCPCA9685.Servo(0, sitPos[0]);
+    HCPCA9685.Servo(1, sitPos[1]);
+    PT_TIMER_DELAY(pt, 300);
+    HCPCA9685.Servo(4, sitPos[4] - 30);
+    HCPCA9685.Servo(5, sitPos[5] + 30);
+    PT_TIMER_DELAY(pt, 300);
+    HCPCA9685.Servo(4, sitPos[4]);
+    HCPCA9685.Servo(5, sitPos[5]);
     //
 label_handshake:
     if (action == haendeSchuetteln) {
@@ -401,6 +458,7 @@ label_handshake:
     delay(300);
 
     stand();
+    stepping();
     PT_YIELD(pt);
   }
 
@@ -532,6 +590,7 @@ static void lieAction(Pt *pt) {
     delay(300);
 
     stand();
+    stepping();
     PT_YIELD(pt);
   }
 
